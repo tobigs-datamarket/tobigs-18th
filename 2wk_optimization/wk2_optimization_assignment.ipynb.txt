@@ -1,0 +1,1856 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "d2StPehwLMat"
+   },
+   "source": [
+    "# 투빅스 18기 Week2 Optimization 과제 - 18기 이다인"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "DKIX8PqcLMaw"
+   },
+   "source": [
+    "# Gradient Descent 구현하기\n",
+    "\n",
+    "### 1)\"...\"표시되어 있는 빈 칸을 채워주세요\n",
+    "### 2)강의내용과 코드에 대해 공부한 내용을 마크마운 또는 주석으로 설명해주세요"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "C6DNHHXfLMax"
+   },
+   "source": [
+    "## 데이터"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "id": "EP3O4xptLMay"
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import random"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "id": "oByQ9wXHLMay"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Label</th>\n",
+       "      <th>bias</th>\n",
+       "      <th>experience</th>\n",
+       "      <th>salary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0.7</td>\n",
+       "      <td>48000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1.9</td>\n",
+       "      <td>48000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2.5</td>\n",
+       "      <td>60000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>4.2</td>\n",
+       "      <td>63000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>6.0</td>\n",
+       "      <td>76000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   Label  bias  experience  salary\n",
+       "0      1     1         0.7   48000\n",
+       "1      0     1         1.9   48000\n",
+       "2      1     1         2.5   60000\n",
+       "3      0     1         4.2   63000\n",
+       "4      0     1         6.0   76000"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data = pd.read_csv('assignment_2.csv')\n",
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "id": "oByQ9wXHLMay"
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 200 entries, 0 to 199\n",
+      "Data columns (total 4 columns):\n",
+      " #   Column      Non-Null Count  Dtype  \n",
+      "---  ------      --------------  -----  \n",
+      " 0   Label       200 non-null    int64  \n",
+      " 1   bias        200 non-null    int64  \n",
+      " 2   experience  200 non-null    float64\n",
+      " 3   salary      200 non-null    int64  \n",
+      "dtypes: float64(1), int64(3)\n",
+      "memory usage: 6.4 KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "data.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Label</th>\n",
+       "      <th>bias</th>\n",
+       "      <th>experience</th>\n",
+       "      <th>salary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>count</th>\n",
+       "      <td>200.000000</td>\n",
+       "      <td>200.0</td>\n",
+       "      <td>200.000000</td>\n",
+       "      <td>200.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>mean</th>\n",
+       "      <td>0.260000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>4.998000</td>\n",
+       "      <td>66700.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>std</th>\n",
+       "      <td>0.439735</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>2.847373</td>\n",
+       "      <td>15536.955459</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>min</th>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.100000</td>\n",
+       "      <td>30000.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25%</th>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.500000</td>\n",
+       "      <td>56000.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>50%</th>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>5.100000</td>\n",
+       "      <td>65000.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75%</th>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>7.425000</td>\n",
+       "      <td>77250.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>max</th>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>10.000000</td>\n",
+       "      <td>107000.000000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            Label   bias  experience         salary\n",
+       "count  200.000000  200.0  200.000000     200.000000\n",
+       "mean     0.260000    1.0    4.998000   66700.000000\n",
+       "std      0.439735    0.0    2.847373   15536.955459\n",
+       "min      0.000000    1.0    0.100000   30000.000000\n",
+       "25%      0.000000    1.0    2.500000   56000.000000\n",
+       "50%      0.000000    1.0    5.100000   65000.000000\n",
+       "75%      1.000000    1.0    7.425000   77250.000000\n",
+       "max      1.000000    1.0   10.000000  107000.000000"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.describe()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 데이터의 target variable 은 `Label`이다.\n",
+    "* 데이터에 결측치는 존재하지 않으며, `experience`와 `salary` 단위, 평균, 분산에 큰 차이가 존재함을 확인할 수 있다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "ubOR3hWGLMaz"
+   },
+   "source": [
+    "## Train Test 데이터 나누기"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "id": "IySSjlizLMaz"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "id": "075EQI1bLMa0"
+   },
+   "outputs": [],
+   "source": [
+    "X_train, X_test, y_train, y_test = train_test_split(data.iloc[:, 1:], data.iloc[:, 0], test_size = 0.25, random_state = 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "id": "O8Ht5u8kLMa1"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "((150, 3), (50, 3), (150,), (50,))"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_train.shape, X_test.shape, y_train.shape, y_test.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 사이킷런에서 제공하는 train_test_split 모듈을 통해 Train과 Test로 데이터셋을 분리할 수 있다.\n",
+    "\n",
+    "\n",
+    "* 함수 구현 방법\n",
+    "1. data에서 target 변수가 아닌 그 이외의 변수를 X에 넣어주고, target 변수를 y에 넣어준다. \n",
+    "2. test_size를 통해 test 데이터셋의 크기를 지정해준다. 위 코드에서는 test_size를 0.25로 설정해주었으므로, 전체 데이터 셋 중 25%만을 test셋으로 지정하겠다는 의미이다.\n",
+    "3. random_state를 지정해줌으로써 데이터 분할 시 동일한 train,test 데이터셋을 생성할 수 있도록 만들어준다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "hYmxND_xLMa2"
+   },
+   "source": [
+    "## Scaling\n",
+    "\n",
+    "experience와 salary의 단위, 평균, 분산이 크게 차이나므로 scaler를 사용해 단위를 맞춰줍니다. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "id": "UI0Xy0gHLMa3"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>bias</th>\n",
+       "      <th>experience</th>\n",
+       "      <th>salary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>0.187893</td>\n",
+       "      <td>-1.143335</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1.185555</td>\n",
+       "      <td>0.043974</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-0.310938</td>\n",
+       "      <td>-0.351795</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-1.629277</td>\n",
+       "      <td>-1.341220</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-1.308600</td>\n",
+       "      <td>0.043974</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   bias  experience    salary\n",
+       "0     1    0.187893 -1.143335\n",
+       "1     1    1.185555  0.043974\n",
+       "2     1   -0.310938 -0.351795\n",
+       "3     1   -1.629277 -1.341220\n",
+       "4     1   -1.308600  0.043974"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.preprocessing import StandardScaler\n",
+    "scaler = StandardScaler()\n",
+    "bias_train = X_train[\"bias\"]\n",
+    "bias_train = bias_train.reset_index()[\"bias\"]\n",
+    "X_train = pd.DataFrame(scaler.fit_transform(X_train), columns = X_train.columns)\n",
+    "X_train[\"bias\"] = bias_train\n",
+    "X_train.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "id": "xBsUSCGGLMa3"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>bias</th>\n",
+       "      <th>experience</th>\n",
+       "      <th>salary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-1.344231</td>\n",
+       "      <td>-0.615642</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>0.508570</td>\n",
+       "      <td>0.307821</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-0.310938</td>\n",
+       "      <td>0.571667</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1.363709</td>\n",
+       "      <td>1.956862</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>-0.987923</td>\n",
+       "      <td>-0.747565</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   bias  experience    salary\n",
+       "0     1   -1.344231 -0.615642\n",
+       "1     1    0.508570  0.307821\n",
+       "2     1   -0.310938  0.571667\n",
+       "3     1    1.363709  1.956862\n",
+       "4     1   -0.987923 -0.747565"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "bias_test = X_test[\"bias\"]\n",
+    "bias_test = bias_test.reset_index()[\"bias\"]\n",
+    "X_test = pd.DataFrame(scaler.transform(X_test), columns = X_test.columns)\n",
+    "X_test[\"bias\"] = bias_test\n",
+    "X_test.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* scaling은 사이킷런에서 제공하는 StandardScaler를 통해 표준화를 진행해주었다. scaling을 통해 단위가 표준화된 것을 확인할 수 있다.\n",
+    "* 이때 scaler는 X_train에 fit 해주고, fit한 scaler를 X_test에 transform시켜준다. 그 이유는 train 데이터 셋에 scaler를 fit시킨 후 그 설정을 그대로 test 데이터셋에도 적용하기 위해서이다. \n",
+    "* 여기서 bias는 절편을 구하기 위한 변수이므로 따로 표준화를 진행해주지 않았다."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "id": "m9sP3nzlLMa4"
+   },
+   "outputs": [],
+   "source": [
+    "# parameter 개수\n",
+    "N = len(X_train.loc[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "id": "qz7xz9dbLMa4"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.67635544, 0.86155531, 0.66777246])"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 초기 parameter들을 임의로 설정해줍니다.\n",
+    "parameters = np.array([random.random() for i in range(N)])\n",
+    "random_parameters = parameters.copy()\n",
+    "parameters"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "QINz-EAKLMa4"
+   },
+   "source": [
+    "### * LaTeX   \n",
+    "\n",
+    "Jupyter Notebook은 LaTeX 문법으로 수식 입력을 지원하고 있습니다.  \n",
+    "LaTeX문법으로 아래의 수식을 완성해주세요  \n",
+    "http://triki.net/apps/3466  \n",
+    "https://jjycjnmath.tistory.com/117"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "D2DsTfXuLMa5"
+   },
+   "source": [
+    "## Dot product\n",
+    "## $z = X_i \\theta$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "id": "2y05lS6xLMa5"
+   },
+   "outputs": [],
+   "source": [
+    "def dot_product(X, parameters):\n",
+    "    z = 0\n",
+    "    for i in range(len(parameters)):\n",
+    "        z += X[i] * parameters[i]\n",
+    "    return z"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "fOGPEhtOLMa5"
+   },
+   "source": [
+    "## Logistic Function\n",
+    "\n",
+    "## $p = \\frac{1}{1+e^{-x_i\\theta}}$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "id": "2awM57u5LMa5"
+   },
+   "outputs": [],
+   "source": [
+    "def logistic(X, parameters):\n",
+    "    z = dot_product(X, parameters)\n",
+    "    p = 1 / (1 + np.exp(-z))   \n",
+    "    return p"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "id": "WVaZEwrdLMa5"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.8490464503224876"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "logistic(X_train.iloc[1], parameters)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 로지스틱 함수를 구현하기 위해 만든 함수이다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "E6cXHl8bLMa6"
+   },
+   "source": [
+    "## Object function\n",
+    "\n",
+    "Object Function : 목적함수는 Gradient Descent를 통해 최적화 하고자 하는 함수입니다.  \n",
+    "<br>\n",
+    "선형 회귀의 목적함수\n",
+    "## $l(\\theta) = \\frac{1}{2}\\Sigma(y_i - \\theta^{T}X_i)^2$  \n",
+    "참고) $\\hat{y_i} = \\theta^{T}X_i$\n",
+    "  \n",
+    "로지스틱 회귀의 목적함수를 작성해주세요  \n",
+    "(선형 회귀의 목적함수처럼 강의에 나온대로 작성해주세요. 평균을 고려하는 것은 뒤에 코드에서 수행합니다)\n",
+    "## $l(p) = - \\sum_{}{}{(y_ilogp(X_i)+(1-y_i)log(1-p(X_i))} $ "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "FnGRAur3LMa6"
+   },
+   "source": [
+    "* 로지스틱 회귀의 목적함수는 신경망을 사용하는 데 가장 일반적인 손실 함수 중 하나로 cross entropy loss 함수를 사용하였다. 이는 모델이 얼마나 잘 수행되는지 측정하기 위해 사용되는 지표이다.\n",
+    "\n",
+    "* p는 예측 확률이며, y는 지표이다. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {
+    "id": "FnGRAur3LMa6"
+   },
+   "outputs": [],
+   "source": [
+    "#로지스틱 회귀의 목적함수 구현\n",
+    "def minus_log_cross_entropy_i(X, y, parameters):\n",
+    "    p = logistic(X, parameters)\n",
+    "    loss = y * np.log(p) + (1 - y) * np.log(1-p)\n",
+    "    return -loss"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {
+    "id": "C922eXYyLMa6"
+   },
+   "outputs": [],
+   "source": [
+    "#선형 회귀의 목적함수 구현\n",
+    "def mse_i(X, y, parameters):\n",
+    "    y_hat = np.dot(X, parameters.T)\n",
+    "    loss = ((y - y_hat)**2) / 2\n",
+    "    return loss"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "id": "0j-MhGkyLMa6"
+   },
+   "outputs": [],
+   "source": [
+    "#로지스틱 회귀의 목적함수 시행\n",
+    "def batch_loss(X_set, y_set, parameters, loss_function, n): #n:현재 배치의 데이터 수\n",
+    "    loss = 0\n",
+    "    for i in range(X_set.shape[0]):\n",
+    "        X = X_set.iloc[i,:]\n",
+    "        y = y_set.iloc[i]\n",
+    "        loss += loss_function(X, y, parameters)\n",
+    "    loss = loss / n #loss 평균값으로 계산\n",
+    "    return loss"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "id": "uSkPS5olLMa7"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1.3807641275952216"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "batch_loss(X_test, y_test, parameters, minus_log_cross_entropy_i, len(X_test))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "ACLi9vCyLMa7"
+   },
+   "source": [
+    "## Gradient\n",
+    "위의 선형회귀의 목적함수 $l(\\theta)$와 로지스틱회귀의 목적함수 $l(p)$의 gradient를 작성해주세요  \n",
+    "(위의 목적함수를 참고해서 작성해주세요 = 평균을 고려하는 것은 뒤에 코드에서 수행합니다)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "caMA-f00LMa7"
+   },
+   "source": [
+    "## ${\\partial\\over{\\partial \\theta_j}}l(\\theta)= - \\sum{}{}{(y_i - \\theta^{T}X_i)}X_ij$ \n",
+    "## ${\\partial\\over{\\partial \\theta_j}}l(p)= - \\sum{}{}{(y_i - p_i)}X_ij$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "id": "apZ0Miz5LMa7"
+   },
+   "outputs": [],
+   "source": [
+    "def get_gradient_ij(X, y, parameters, j, model):\n",
+    "    if model == 'linear': # 선형회귀의 목적함수 gradient\n",
+    "        y_hat = np.dot(X, parameters.T)\n",
+    "        gradient = (y - y_hat) * X[j]\n",
+    "    else: # 로지스틱 회귀의 목적함수 gradient\n",
+    "        p = logistic(X, parameters.T)\n",
+    "        gradient = (y - p) * X[j]\n",
+    "    return -gradient"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "id": "XXBe6q8gLMa7"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-0.09043699266780032"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "get_gradient_ij(X_train.iloc[0,:], y_train.iloc[0], parameters, 1, 'logistic')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 위 gradinet는 가장 처음으로 구해진 gradiant라고 볼 수 있으며, 여기서 구현 된 함수는 하나의 데이터 셋에 대한 목적 함수의 기울기를 구하는 함수이다."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "ename": "FileNotFoundError",
+     "evalue": "No such file or directory: 'C:/Users/김건우/Desktop/배치알고리즘_구현.png'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1032\u001b[0m, in \u001b[0;36mImage._data_and_metadata\u001b[1;34m(self, always_both)\u001b[0m\n\u001b[0;32m   1031\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[1;32m-> 1032\u001b[0m     b64_data \u001b[38;5;241m=\u001b[39m \u001b[43mb2a_base64\u001b[49m\u001b[43m(\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mdata\u001b[49m\u001b[43m)\u001b[49m\u001b[38;5;241m.\u001b[39mdecode(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mascii\u001b[39m\u001b[38;5;124m'\u001b[39m)\n\u001b[0;32m   1033\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mTypeError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m e:\n",
+      "\u001b[1;31mTypeError\u001b[0m: a bytes-like object is required, not 'str'",
+      "\nThe above exception was the direct cause of the following exception:\n",
+      "\u001b[1;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\formatters.py:973\u001b[0m, in \u001b[0;36mMimeBundleFormatter.__call__\u001b[1;34m(self, obj, include, exclude)\u001b[0m\n\u001b[0;32m    970\u001b[0m     method \u001b[38;5;241m=\u001b[39m get_real_method(obj, \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mprint_method)\n\u001b[0;32m    972\u001b[0m     \u001b[38;5;28;01mif\u001b[39;00m method \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m--> 973\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43mmethod\u001b[49m\u001b[43m(\u001b[49m\u001b[43minclude\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43minclude\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mexclude\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43mexclude\u001b[49m\u001b[43m)\u001b[49m\n\u001b[0;32m    974\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m\n\u001b[0;32m    975\u001b[0m \u001b[38;5;28;01melse\u001b[39;00m:\n",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1022\u001b[0m, in \u001b[0;36mImage._repr_mimebundle_\u001b[1;34m(self, include, exclude)\u001b[0m\n\u001b[0;32m   1020\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39membed:\n\u001b[0;32m   1021\u001b[0m     mimetype \u001b[38;5;241m=\u001b[39m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_mimetype\n\u001b[1;32m-> 1022\u001b[0m     data, metadata \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_data_and_metadata\u001b[49m\u001b[43m(\u001b[49m\u001b[43malways_both\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[38;5;28;43;01mTrue\u001b[39;49;00m\u001b[43m)\u001b[49m\n\u001b[0;32m   1023\u001b[0m     \u001b[38;5;28;01mif\u001b[39;00m metadata:\n\u001b[0;32m   1024\u001b[0m         metadata \u001b[38;5;241m=\u001b[39m {mimetype: metadata}\n",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1034\u001b[0m, in \u001b[0;36mImage._data_and_metadata\u001b[1;34m(self, always_both)\u001b[0m\n\u001b[0;32m   1032\u001b[0m     b64_data \u001b[38;5;241m=\u001b[39m b2a_base64(\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mdata)\u001b[38;5;241m.\u001b[39mdecode(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mascii\u001b[39m\u001b[38;5;124m'\u001b[39m)\n\u001b[0;32m   1033\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mTypeError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m e:\n\u001b[1;32m-> 1034\u001b[0m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mFileNotFoundError\u001b[39;00m(\n\u001b[0;32m   1035\u001b[0m         \u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mNo such file or directory: \u001b[39m\u001b[38;5;124m'\u001b[39m\u001b[38;5;132;01m%s\u001b[39;00m\u001b[38;5;124m'\u001b[39m\u001b[38;5;124m\"\u001b[39m \u001b[38;5;241m%\u001b[39m (\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mdata)) \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01me\u001b[39;00m\n\u001b[0;32m   1036\u001b[0m md \u001b[38;5;241m=\u001b[39m {}\n\u001b[0;32m   1037\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mmetadata:\n",
+      "\u001b[1;31mFileNotFoundError\u001b[0m: No such file or directory: 'C:/Users/김건우/Desktop/배치알고리즘_구현.png'"
+     ]
+    },
+    {
+     "ename": "FileNotFoundError",
+     "evalue": "No such file or directory: 'C:/Users/김건우/Desktop/배치알고리즘_구현.png'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1032\u001b[0m, in \u001b[0;36mImage._data_and_metadata\u001b[1;34m(self, always_both)\u001b[0m\n\u001b[0;32m   1031\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[1;32m-> 1032\u001b[0m     b64_data \u001b[38;5;241m=\u001b[39m \u001b[43mb2a_base64\u001b[49m\u001b[43m(\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mdata\u001b[49m\u001b[43m)\u001b[49m\u001b[38;5;241m.\u001b[39mdecode(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mascii\u001b[39m\u001b[38;5;124m'\u001b[39m)\n\u001b[0;32m   1033\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mTypeError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m e:\n",
+      "\u001b[1;31mTypeError\u001b[0m: a bytes-like object is required, not 'str'",
+      "\nThe above exception was the direct cause of the following exception:\n",
+      "\u001b[1;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\formatters.py:343\u001b[0m, in \u001b[0;36mBaseFormatter.__call__\u001b[1;34m(self, obj)\u001b[0m\n\u001b[0;32m    341\u001b[0m     method \u001b[38;5;241m=\u001b[39m get_real_method(obj, \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mprint_method)\n\u001b[0;32m    342\u001b[0m     \u001b[38;5;28;01mif\u001b[39;00m method \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m--> 343\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[43mmethod\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[0;32m    344\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m\n\u001b[0;32m    345\u001b[0m \u001b[38;5;28;01melse\u001b[39;00m:\n",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1054\u001b[0m, in \u001b[0;36mImage._repr_png_\u001b[1;34m(self)\u001b[0m\n\u001b[0;32m   1052\u001b[0m \u001b[38;5;28;01mdef\u001b[39;00m \u001b[38;5;21m_repr_png_\u001b[39m(\u001b[38;5;28mself\u001b[39m):\n\u001b[0;32m   1053\u001b[0m     \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39membed \u001b[38;5;129;01mand\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mformat \u001b[38;5;241m==\u001b[39m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_FMT_PNG:\n\u001b[1;32m-> 1054\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_data_and_metadata\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n",
+      "File \u001b[1;32m~\\miniforge3\\envs\\gis\\lib\\site-packages\\IPython\\core\\display.py:1034\u001b[0m, in \u001b[0;36mImage._data_and_metadata\u001b[1;34m(self, always_both)\u001b[0m\n\u001b[0;32m   1032\u001b[0m     b64_data \u001b[38;5;241m=\u001b[39m b2a_base64(\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mdata)\u001b[38;5;241m.\u001b[39mdecode(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mascii\u001b[39m\u001b[38;5;124m'\u001b[39m)\n\u001b[0;32m   1033\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mTypeError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m e:\n\u001b[1;32m-> 1034\u001b[0m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mFileNotFoundError\u001b[39;00m(\n\u001b[0;32m   1035\u001b[0m         \u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mNo such file or directory: \u001b[39m\u001b[38;5;124m'\u001b[39m\u001b[38;5;132;01m%s\u001b[39;00m\u001b[38;5;124m'\u001b[39m\u001b[38;5;124m\"\u001b[39m \u001b[38;5;241m%\u001b[39m (\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mdata)) \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01me\u001b[39;00m\n\u001b[0;32m   1036\u001b[0m md \u001b[38;5;241m=\u001b[39m {}\n\u001b[0;32m   1037\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mmetadata:\n",
+      "\u001b[1;31mFileNotFoundError\u001b[0m: No such file or directory: 'C:/Users/김건우/Desktop/배치알고리즘_구현.png'"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<IPython.core.display.Image object>"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from IPython.display import Image\n",
+    "\n",
+    "Image(\"C:/Users/김건우/Desktop/배치알고리즘_구현.png\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "wTfzKh_nLMa7"
+   },
+   "source": [
+    "## Batch Gradient\n",
+    "하나의 배치 (X_set, y_set)에 대해 기울기를 구하는 코드를 작성해주세요"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "id": "Qby2_X1vLMa7"
+   },
+   "outputs": [],
+   "source": [
+    "def batch_gradient(X_set, y_set, parameters, model):\n",
+    "    gradients = [0 for _ in range(len(parameters))]\n",
+    "    \n",
+    "    for i in range(len(X_set)):\n",
+    "        X = X_set.iloc[i,:]\n",
+    "        y = y_set.iloc[i]\n",
+    "        for j in range(len(parameters)):\n",
+    "            gradients[j] += get_gradient_ij(X, y, parameters, j, model)\n",
+    "    \n",
+    "    return gradients"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "id": "rHxBS5RnLMa8"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[49.74085145337722, 18.57871423081134, 48.219231235715014]"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "gradients1 = batch_gradient(X_train, y_train, parameters, 'logistic')\n",
+    "gradients1"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 여기서 구현된 함수는 하나의 배치에 대한 기울기를 구하는 함수이며, 후에 이 함수를 통해 기울기를 구하며 parameter를 수정할 것이다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "cQnlDboALMa8"
+   },
+   "source": [
+    "## mini-batch\n",
+    "인덱스로 미니 배치 나누기"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "id": "LgnfT6eHLMa8"
+   },
+   "outputs": [],
+   "source": [
+    "def batch_idx(X_train, batch_size):\n",
+    "    N = len(X_train)\n",
+    "    nb = (N // batch_size)+1 #number of batch\n",
+    "    idx = np.array([i for i in range(N)])\n",
+    "    idx_list = [idx[i*batch_size:(i+1)*batch_size] for i in range(nb) if len(idx[i*batch_size:(i+1)*batch_size]) != 0]\n",
+    "    return idx_list"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "9S9fk1UTLMa8"
+   },
+   "source": [
+    "batch_idx 함수에 대한 설명을 batch_size와 함께 간략하게 작성해주세요  \n",
+    "\n",
+    "* 설명 : batch_idx 함수는 batch_size를 설정하는 함수이다. batch size는 하나의 미니 배치에 넘겨주는 데이터 개수이다. 예를 들어 batch size를 10으로 설정하면 10개의 데이터가 하나의 미니 배치에 넘겨지는 것이다. 여기서 만일 배치 사이즈를 매우 크게 설정한다면 경사 하강법을 수행하는 과정에서 많은 계산량이 필요하기 때문에 속도가 느려지고, 메모리의 한계로 계산이 불가능한 경우도 생길 수 있다. 또한 배치사이즈를 너무 작게 잡는다하며 학습이 불안정해질 수 있기 때문에 적절한 배치사이즈를 설정해주어야 한다. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "4pMuZbkQLMa8"
+   },
+   "source": [
+    "## Update Parameters\n",
+    "기울기를 갱신하는 코드를 작성해주세요  \n",
+    "(loss와 마찬가지로 기울기를 갱신할 때 배치 사이즈를 고려해 평균으로 갱신해주세요)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "id": "loeL51rPLMa8"
+   },
+   "outputs": [],
+   "source": [
+    "def step(parameters, gradients, learning_rate, n): #n:현재 배치의 데이터 수\n",
+    "    for i in range(len(parameters)):\n",
+    "        gradients[i] *= learning_rate / n\n",
+    "    \n",
+    "    parameters -= gradients\n",
+    "    return parameters"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "id": "NLB2dUVTLMa8"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.67303938, 0.86031673, 0.66455784])"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "step(parameters, gradients1, 0.01, len(X_train))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 여기서 구현된 함수는 구해진 기울기를 바탕으로 learning_rate를 이용하여 기울기를 수정하고, 그 기울기를 통해 parameter를 수정하는 함수이다,"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "RX8RJFd_LMa9"
+   },
+   "source": [
+    "## Gradient Descent\n",
+    "위에서 작성한 함수들을 조합해서 경사하강법 함수를 완성해주세요\n",
+    "\n",
+    "- learning_rate: 학습률  \n",
+    "- tolerance: Step이 너무 작아서 더 이상의 학습이 무의미할 때 학습을 멈추는 조건  \n",
+    "- batch: 기울기를 1번 갱신할 때 사용하는 데이터셋  \n",
+    "- epoch:  \n",
+    "- num_epoch:\n",
+    "<br>\n",
+    "\n",
+    "BGD: 한 번 학습할 때 모든 데이터셋을 이용하여 기울기를 업데이트 하는 방법 \n",
+    "SGD: 한 번 학습할 때 임의의 하나의 데이터만을 사용하여 기울기를 업데이트 하는 방법\n",
+    "MGD: 한 번 학습할 때 데이터셋의 일부만을 사용하여 기울기를 업데이트 하는 방법\n",
+    "<br>\n",
+    "batch_size에 따른 경사하강법의 종류를 적어주세요   \n",
+    "batch_size=1 -> SGD    \n",
+    "batch_size=k -> MGD   \n",
+    "batch_size=whole -> BGD  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "metadata": {
+    "id": "ZGbnVHbbLMa9"
+   },
+   "outputs": [],
+   "source": [
+    "def gradient_descent(X_train, y_train, learning_rate = 0.1, num_epoch = 1000, tolerance = 0.000001, model = 'logistic', batch_size = 16):\n",
+    "    stopper = False\n",
+    "    \n",
+    "    N = len(X_train.iloc[0])\n",
+    "    parameters = np.random.rand(N)\n",
+    "    loss_function = minus_log_cross_entropy_i if model == 'logistic' else mse_i\n",
+    "    loss = 999\n",
+    "    batch_idx_list = batch_idx(X_train, batch_size)\n",
+    "    \n",
+    "    for epoch in range(num_epoch):\n",
+    "        if stopper:\n",
+    "            break\n",
+    "        for idx in batch_idx_list:\n",
+    "            X_batch = X_train.iloc[idx,]\n",
+    "            y_batch = y_train.iloc[idx]\n",
+    "            gradients = batch_gradient(X_batch, y_batch, parameters, model)\n",
+    "            parameters = step(parameters, gradients, learning_rate, len(X_batch))\n",
+    "            new_loss = batch_loss(X_batch, y_batch, parameters, loss_function, len(X_batch))\n",
+    "            \n",
+    "            #중단 조건\n",
+    "            if abs(new_loss - loss) < tolerance:\n",
+    "                stopper = True\n",
+    "                break\n",
+    "            loss = new_loss\n",
+    "        \n",
+    "        #100epoch마다 학습 상태 출력\n",
+    "        if epoch%100 == 0: #출력이 길게 나오면 check point를 수정해도 됩니다.\n",
+    "            print(f\"epoch: {epoch}  loss: {new_loss}  params: {parameters}  gradients: {gradients}\")\n",
+    "    \n",
+    "    return parameters"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 위 경사하강법 함수에서 learning late는 학습률으로 보폭이라고 불리기도 한다. 이 학습률이 지나치게 클 경우는 오차의 최저점에 수렵하지 못한다는 단점이 있고, 학습률이 지나치게 작을 경우는 학습시간이 매우 오래 걸려 최저점에 도착하는데 시간이 매우 오래걸린다는 단점이 있다.\n",
+    "\n",
+    "* tolerance는 조정된 loss값과 기존의 loss값의 차이가 이 값보다 작을 시 학습을 중단하는 기준이다. tolerance의 값보다 loss의 차이가 작다면 학습이 더 이상 무의미하다고 판단하는 것이다. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "3CTtc3eiLMa9"
+   },
+   "source": [
+    "## Implement\n",
+    "경사하강법 함수를 이용해 최적의 모수 찾아보세요. 학습을 진행할 때, Hyper Parameter를 바꿔가면서 학습시켜보세요."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "KnUpYC7_LMa9"
+   },
+   "source": [
+    "## Logistic Regression"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {
+    "collapsed": true,
+    "id": "-LS6o3aeLMa-",
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 0.8559010295766611  params: [0.63125314 0.78762536 0.01181853]  gradients: [3.531115184223273e-05, 4.567044611416491e-06, 2.1765207270553937e-05]\n",
+      "epoch: 100  loss: 0.8541626889111431  params: [0.62772521 0.78716976 0.00964375]  gradients: [3.524813765403446e-05, 4.54515069773539e-06, 2.17307365279847e-05]\n",
+      "epoch: 200  loss: 0.8524304914851214  params: [0.62420358 0.78671635 0.00747242]  gradients: [3.518508688446926e-05, 4.523161666395971e-06, 2.1696169011304653e-05]\n",
+      "epoch: 300  loss: 0.8507044335781974  params: [0.62068826 0.78626515 0.00530455]  gradients: [3.512200035413499e-05, 4.501078317489782e-06, 2.1661505683015865e-05]\n",
+      "epoch: 400  loss: 0.8489845113169711  params: [0.61717924 0.78581616 0.00314015]  gradients: [3.5058878888114056e-05, 4.478901457769959e-06, 2.1626747513124936e-05]\n",
+      "epoch: 500  loss: 0.8472707206750603  params: [0.61367654 0.78536939 0.00097924]  gradients: [3.499572331589706e-05, 4.456631900574502e-06, 2.1591895479051042e-05]\n",
+      "epoch: 600  loss: 0.8455630574731365  params: [ 0.61018016  0.78492486 -0.00117819]  gradients: [3.493253447130507e-05, 4.434270465748157e-06, 2.155695056553235e-05]\n",
+      "epoch: 700  loss: 0.843861517378983  params: [ 0.6066901   0.78448257 -0.00333211]  gradients: [3.486931319241133e-05, 4.411817979562607e-06, 2.152191376453037e-05]\n",
+      "epoch: 800  loss: 0.8421660959075796  params: [ 0.60320636  0.78404252 -0.00548253]  gradients: [3.480606032146131e-05, 4.389275274635144e-06, 2.148678607513262e-05]\n",
+      "epoch: 900  loss: 0.8404767884211995  params: [ 0.59972895  0.78360474 -0.00762943]  gradients: [3.4742776704792585e-05, 4.366643189845741e-06, 2.1451568503453215e-05]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.59629255,  0.78317356, -0.00975139])"
+      ]
+     },
+     "execution_count": 44,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_bgd = gradient_descent(X_train, y_train, learning_rate=0.0001, batch_size = X_train.shape[0])\n",
+    "new_param_bgd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {
+    "collapsed": true,
+    "id": "x0H5tnauLMa-",
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 1.4312687645046827  params: [0.31414869 0.94530657 0.46838905]  gradients: [0.0007612424256089481, 0.0004142688561204768, 0.0005356031229158977]\n",
+      "epoch: 100  loss: 0.2829387123450007  params: [-0.97524829  1.26523699 -1.18110868]  gradients: [0.00024651603770049107, 0.00013415426350133045, 0.00017344640182871617]\n",
+      "epoch: 200  loss: 0.22332857163818923  params: [-1.15644597  1.85346447 -1.75894977]  gradients: [0.0002002054176756797, 0.00010895197978919792, 0.00014086267833272382]\n",
+      "epoch: 300  loss: 0.19240794173864142  params: [-1.26697015  2.25815876 -2.14942202]  gradients: [0.00017507502569391375, 9.527599643630293e-05, 0.00012318116719681026]\n",
+      "epoch: 400  loss: 0.17176968136791576  params: [-1.3521672   2.55890167 -2.43732087]  gradients: [0.00015786446920694263, 8.590999513474519e-05, 0.00011107197899153081]\n",
+      "epoch: 500  loss: 0.1569417947579775  params: [-1.42061393  2.7939656  -2.66099029]  gradients: [0.00014527850096125006, 7.90606991773623e-05, 0.00010221660825740389]\n",
+      "epoch: 600  loss: 0.1457927115439176  params: [-1.47683324  2.98388073 -2.84083487]  gradients: [0.0001356916505909419, 7.384352603632415e-05, 9.547138909393307e-05]\n",
+      "epoch: 700  loss: 0.13712503222537215  params: [-1.52379878  3.14090439 -2.98895442]  gradients: [0.00012816444072177047, 6.974721122598503e-05, 9.017531391847692e-05]\n",
+      "epoch: 800  loss: 0.13021158956127335  params: [-1.56356777  3.27294933 -3.11311199]  gradients: [0.00012211379156337529, 6.645444216673355e-05, 8.591813318881317e-05]\n",
+      "epoch: 900  loss: 0.12458516436687081  params: [-1.59761101  3.38542826 -3.21858813]  gradients: [0.00011715863427860993, 6.375784083291442e-05, 8.243173039914107e-05]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([-1.62673724,  3.48131131, -3.308298  ])"
+      ]
+     },
+     "execution_count": 52,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_sgd = gradient_descent(X_train, y_train, learning_rate=0.001, batch_size = 1)\n",
+    "new_param_sgd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "metadata": {
+    "collapsed": true,
+    "id": "iGfXGoJaLMa-",
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 1.1306556590263372  params: [0.13238634 0.22660434 0.54746105]  gradients: [0.0005112572056595566, 0.00047264692472193034, 0.0006290718061738443]\n",
+      "epoch: 100  loss: 0.8653924671118851  params: [-0.10350341  0.19876504  0.29847465]  gradients: [0.0004084187601475867, 0.0003815057889978144, 0.0005291245984821347]\n",
+      "epoch: 200  loss: 0.7062884006129256  params: [-0.28727901  0.21129402  0.10175674]  gradients: [0.0003258569965529096, 0.0003063879595089437, 0.00044582051982031075]\n",
+      "epoch: 300  loss: 0.6103721341498142  params: [-0.42935713  0.2516121  -0.05513343]  gradients: [0.00026635017925312666, 0.0002525946828516162, 0.0003851763159591037]\n",
+      "epoch: 400  loss: 0.5494574709248136  params: [-0.54008129  0.30842101 -0.1845265 ]  gradients: [0.00022469589238392976, 0.00021577325336470375, 0.00034269795231757304]\n",
+      "epoch: 500  loss: 0.5081567366831362  params: [-0.62753672  0.37402773 -0.29529937]  gradients: [0.00019529449824722144, 0.00019053151485589725, 0.00031268617361214035]\n",
+      "epoch: 600  loss: 0.47835606310630413  params: [-0.69761961  0.44371999 -0.39318537]  gradients: [0.00017410320302502856, 0.00017291809734277627, 0.00029093629771843383]\n",
+      "epoch: 700  loss: 0.4556651254924602  params: [-0.75459289  0.5147164  -0.48179982]  gradients: [0.00015846908081613683, 0.00016036276102664236, 0.0002747027691364848]\n",
+      "epoch: 800  loss: 0.43760056606273195  params: [-0.80156812  0.58540026 -0.56344514]  gradients: [0.00014667356039002084, 0.00015122643312435338, 0.00026223051927671154]\n",
+      "epoch: 900  loss: 0.42269041279550384  params: [-0.84084602  0.65484699 -0.63962281]  gradients: [0.0001375879536189076, 0.00014445136502315835, 0.00025238523450511345]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([-0.87384047,  0.72187745, -0.71064405])"
+      ]
+     },
+     "execution_count": 46,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_mgd = gradient_descent(X_train, y_train, learning_rate=0.001, batch_size = 16)\n",
+    "new_param_mgd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 0.7104691299247671  params: [0.02380928 0.73962443 0.15100504]  gradients: [0.0022386685617163905, 0.0007147168813488569, 0.0025041018952781224]\n",
+      "epoch: 100  loss: 0.6172176636152626  params: [-0.17734022  0.69003675 -0.07237316]  gradients: [0.001795053316666474, 0.0002907830777736029, 0.0019780229677353904]\n",
+      "epoch: 200  loss: 0.5606507919661032  params: [-0.33698628  0.67872862 -0.24746197]  gradients: [0.0014153845858423436, -4.245057221818473e-05, 0.0015488616352800245]\n",
+      "epoch: 300  loss: 0.525201750785652  params: [-0.46288994  0.69508573 -0.38593994]  gradients: [0.0011190316986899236, -0.0002655168887934977, 0.0012428710744801866]\n",
+      "epoch: 400  loss: 0.5011688071435431  params: [-0.56293119  0.72912872 -0.49904819]  gradients: [0.0008945264995171646, -0.0004021361316155372, 0.001034873016150186]\n",
+      "epoch: 500  loss: 0.4834768307672779  params: [-0.64340942  0.77370824 -0.59493375]  gradients: [0.0007244881647291143, -0.00048109264976335805, 0.0008930178365340812]\n",
+      "epoch: 600  loss: 0.4695504621771335  params: [-0.70900983  0.824205   -0.67893805]  gradients: [0.0005945125722948923, -0.0005237045360091568, 0.0007936517793032445]\n",
+      "epoch: 700  loss: 0.458036323050344  params: [-0.76317844  0.87773478 -0.75447852]  gradients: [0.000494086813184561, -0.000543775692475662, 0.0007214786245522144]\n",
+      "epoch: 800  loss: 0.4481810338411145  params: [-0.80847056  0.93251226 -0.8237551 ]  gradients: [0.000415712290861819, -0.0005499119598910847, 0.0006669614897607336]\n",
+      "epoch: 900  loss: 0.4395385078570654  params: [-0.84680476  0.98743471 -0.88821038]  gradients: [0.0003540016953061409, -0.0005474546960374286, 0.0006241615864202143]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.59629255,  0.78317356, -0.00975139])"
+      ]
+     },
+     "execution_count": 47,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_bgd2 = gradient_descent(X_train, y_train, learning_rate=0.01, batch_size = X_train.shape[0])\n",
+    "new_param_bgd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 1.1681836778135877  params: [0.41047577 0.29862747 0.31663354]  gradients: [0.006917171768983224, 0.0037643314927347255, 0.004866858016024835]\n",
+      "epoch: 100  loss: 0.1193162332352822  params: [-1.62744725  3.46224639 -3.30083537]  gradients: [0.0011267453109846891, 0.0006131758759338008, 0.0007927675691636464]\n",
+      "epoch: 200  loss: 0.097154069189569  params: [-1.78741494  3.97968339 -3.78177161]  gradients: [0.0009272343597525304, 0.0005046018254474021, 0.0006523935109910675]\n",
+      "epoch: 300  loss: 0.09080302314545328  params: [-1.84034694  4.14976705 -3.93876405]  gradients: [0.000869259283666798, 0.00047305173359023635, 0.0006116027842025998]\n",
+      "epoch: 400  loss: 0.0885584669787617  params: [-1.85998078  4.2127422  -3.99676075]  gradients: [0.000848683924396173, 0.0004618546033954877, 0.0005971261519107937]\n",
+      "epoch: 500  loss: 0.08771009533342891  params: [-1.8675369   4.23696298 -4.01904821]  gradients: [0.0008408953458829538, 0.000457616051519067, 0.0005916461801771915]\n",
+      "epoch: 600  loss: 0.08738144924303788  params: [-1.87048447  4.24640903 -4.02773748]  gradients: [0.0008378764383295028, 0.00045597315914099024, 0.0005895221047722646]\n",
+      "epoch: 700  loss: 0.08725293129777922  params: [-1.87164027  4.25011265 -4.03114396]  gradients: [0.0008366956231160716, 0.00045533055837242896, 0.0005886912941203302]\n",
+      "epoch: 800  loss: 0.08720248925162571  params: [-1.87209439  4.25156778 -4.03248228]  gradients: [0.0008362321241570123, 0.00045507832179558685, 0.000588365180543907]\n",
+      "epoch: 900  loss: 0.08718266275235564  params: [-1.87227296  4.25213996 -4.03300851]  gradients: [0.0008360499373232502, 0.0004549791755463977, 0.000588236995574396]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([-1.87234277,  4.25236365, -4.03321424])"
+      ]
+     },
+     "execution_count": 48,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_sgd2 = gradient_descent(X_train, y_train, learning_rate=0.01, batch_size = 1)\n",
+    "new_param_sgd2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 0.8274456238503568  params: [ 0.2280844   0.16603147 -0.01449499]  gradients: [0.004227453960255223, 0.0037558925451924544, 0.00515032768645728]\n",
+      "epoch: 100  loss: 0.39265123412580394  params: [-0.87122703  0.85961749 -0.8640684 ]  gradients: [0.001303316539386538, 0.0014076583330345554, 0.0023956754101038596]\n",
+      "epoch: 200  loss: 0.3258453749300129  params: [-1.07439678  1.38500999 -1.3750341 ]  gradients: [0.001002688536883352, 0.0012208179603538719, 0.0020222004518848998]\n",
+      "epoch: 300  loss: 0.2893367178254536  params: [-1.17912779  1.76993152 -1.750456  ]  gradients: [0.000906211827148354, 0.0011738394131001661, 0.0018516701735608754]\n",
+      "epoch: 400  loss: 0.2648260395994049  params: [-1.25967467  2.06875771 -2.04105347]  gradients: [0.0008517449461659552, 0.001147786816475768, 0.0017392419507804822]\n",
+      "epoch: 500  loss: 0.2469999941582671  params: [-1.32733019  2.31046485 -2.27506066]  gradients: [0.000814669421691211, 0.0011287073756010664, 0.0016567693441706503]\n",
+      "epoch: 600  loss: 0.23339792988515976  params: [-1.3854843  2.5116942 -2.4690673]  gradients: [0.0007877601697596627, 0.0011137883986989936, 0.0015933465156963338]\n",
+      "epoch: 700  loss: 0.22266021034207598  params: [-1.43606259  2.68278234 -2.63341544]  gradients: [0.000767564874405155, 0.001101860753306509, 0.0015430608066254424]\n",
+      "epoch: 800  loss: 0.21396217012329546  params: [-1.48045779  2.83056883 -2.77493436]  gradients: [0.0007520341993191463, 0.0010921800671107372, 0.0015022508231969372]\n",
+      "epoch: 900  loss: 0.20677169872588322  params: [-1.51973654  2.95981139 -2.8983583 ]  gradients: [0.000739846193444446, 0.00108421523630871, 0.0014685010809032774]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([-1.55439935,  3.07287834, -3.00607822])"
+      ]
+     },
+     "execution_count": 49,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_mgd2 = gradient_descent(X_train, y_train, learning_rate=0.01, batch_size = 16)\n",
+    "new_param_mgd2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 1.6138482340821305  params: [0.87782553 0.39660834 0.42374642]  gradients: [8.009029984078734e-05, 4.358521777717242e-05, 5.6350793475129305e-05]\n",
+      "epoch: 100  loss: 1.062059200166376  params: [0.34869808 0.39021359 0.10908513]  gradients: [6.54283387065669e-05, 3.560616450423173e-05, 4.603477336461318e-05]\n",
+      "epoch: 200  loss: 0.7475681151683601  params: [-0.0333453   0.42900022 -0.13372059]  gradients: [5.265068189700385e-05, 2.8652551447046534e-05, 3.704453233164006e-05]\n",
+      "epoch: 300  loss: 0.5763865813839106  params: [-0.29964326  0.50261124 -0.31674269]  gradients: [4.380941435832926e-05, 2.3841125196109564e-05, 3.082389834574388e-05]\n",
+      "epoch: 400  loss: 0.4782134912442372  params: [-0.48642706  0.5931309  -0.46253598]  gradients: [3.8012620166260496e-05, 2.0686504252337085e-05, 2.67453276201447e-05]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([-0.54019218,  0.62796514, -0.50918168])"
+      ]
+     },
+     "execution_count": 50,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_param_sgd3 = gradient_descent(X_train, y_train, learning_rate=0.0001, batch_size = 1)\n",
+    "new_param_sgd3"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* learning_rate 와 batch_size를 조정해가며 학습을 시도해본 결과 다른 batch size의 loss 값은 0.x대였던 것에 비해 loss가 0.0x대였던 batch_size는 SGD 였다. \n",
+    "* 또한 SGD에서 가장 적합한 learning_rate를 찾기 위해 학습률을 조정해본 결과  SGD를 사용했을 때 가장 loss가 낮았던 학습률은 0.01이었다.\n",
+    "* 따라서 모델 예측에서는 학습률 = 0.01, batch size = 1인 new_param_sgd2를 사용하려고 한다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "k0oCaZ0tLMa-"
+   },
+   "source": [
+    "### Predict Label"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {
+    "id": "syJE3oiNLMa-"
+   },
+   "outputs": [],
+   "source": [
+    "y_predict = []\n",
+    "for i in range(len(y_test)):\n",
+    "    p = logistic(X_test.iloc[i,:], new_param_sgd2)\n",
+    "    if p> 0.5 :\n",
+    "        y_predict.append(1)\n",
+    "    else :\n",
+    "        y_predict.append(0)\n",
+    "\n",
+    "y_predict_random = []\n",
+    "for i in range(len(y_test)):\n",
+    "    p = logistic(X_test.iloc[i,:], random_parameters)\n",
+    "    if p> 0.5 :\n",
+    "        y_predict_random.append(1)\n",
+    "    else :\n",
+    "        y_predict_random.append(0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 위 함수는 new_param_sgd2와 초기 설정된 parameters를 활용한 예측으로 로지스틱 함수로 예측한 값을 0.5를 기준으로 0,1로로 구분하여 나타낸 코드이다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "pZKpFItfLMa-"
+   },
+   "source": [
+    "### Confusion Matrix"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {
+    "id": "W4E1PgX5LMa-"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics import *"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 62,
+   "metadata": {
+    "id": "-veTwxu4LMa-"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[38,  2],\n",
+       "       [ 1,  9]], dtype=int64)"
+      ]
+     },
+     "execution_count": 62,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# new_param_sgd2의 confusion_matrix\n",
+    "tn, fp, fn, tp = confusion_matrix(y_test, y_predict).ravel()\n",
+    "confusion_matrix(y_test, y_predict)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 63,
+   "metadata": {
+    "id": "h4_dW9rDLMa_"
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "new_param_sgd2 accuracy: 0.94\n",
+      "new_param_sgd2 precision:  0.8181818181818182\n",
+      "new_param_sgd2 recall:  0.9\n",
+      "new_param_sgd2 f1_score:  0.8571428571428572\n"
+     ]
+    }
+   ],
+   "source": [
+    "# new_param_sgd2의 accuracy, precision, recall, f1_score 계산\n",
+    "accuracy = (tp+tn)/(tp+fn+fp+tn)\n",
+    "precision = (tp)/(tp+fp)\n",
+    "recall = (tp)/(tp+fn)\n",
+    "f1_score = 2*(precision*recall)/(precision+recall)\n",
+    "print(\"new_param_sgd2 accuracy:\",accuracy)\n",
+    "print(\"new_param_sgd2 precision: \", precision)\n",
+    "print(\"new_param_sgd2 recall: \", recall)\n",
+    "print(\"new_param_sgd2 f1_score: \", f1_score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[11, 29],\n",
+       "       [ 1,  9]], dtype=int64)"
+      ]
+     },
+     "execution_count": 64,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# random_parameters의 confusion_matrix\n",
+    "tn, fp, fn, tp = confusion_matrix(y_test, y_predict_random).ravel()\n",
+    "confusion_matrix(y_test, y_predict_random)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "random_parameters accuracy: 0.4\n",
+      "random_parameters precision:  0.23684210526315788\n",
+      "random_parameters recall:  0.9\n",
+      "random_parameters f1_score:  0.375\n"
+     ]
+    }
+   ],
+   "source": [
+    "# random_parameters의 accuracy, precision, recall, f1_score 계산\n",
+    "accuracy = (tp+tn)/(tp+fn+fp+tn)\n",
+    "precision = (tp)/(tp+fp)\n",
+    "recall = (tp)/(tp+fn)\n",
+    "f1_score = 2*(precision*recall)/(precision+recall)\n",
+    "print(\"random_parameters accuracy:\",accuracy)\n",
+    "print(\"random_parameters precision: \", precision)\n",
+    "print(\"random_parameters recall: \", recall)\n",
+    "print(\"random_parameters f1_score: \", f1_score)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "* 정확도와 정밀도, f1_score를 통해 초기 랜덤으로 설정된 parameter의 값보다 조정된 parameter의 값을 이용했을 때 모델 성능이 훨씬 높아진 것을 알 수 있다."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "XIgqa85aLMa_"
+   },
+   "source": [
+    "## Linear regression\n",
+    "### $y = 0.5 + 2.7x$"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "qYeIg9QNLMa_"
+   },
+   "source": [
+    "### Data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {
+    "id": "nv8-yhszLMa_"
+   },
+   "outputs": [],
+   "source": [
+    "raw_X = np.random.rand(150)\n",
+    "y = 2.7*raw_X + 0.5 + np.random.randn(150)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 60,
+   "metadata": {
+    "id": "07XtxLGWLMa_"
+   },
+   "outputs": [],
+   "source": [
+    "tmp = np.array([1 for _ in range(150)])\n",
+    "X = np.vstack((tmp, raw_X)).T\n",
+    "X = pd.DataFrame(X)\n",
+    "y = pd.Series(y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "6oENC02TLMa_"
+   },
+   "source": [
+    "### Estimation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {
+    "id": "fu578YrKLMa_"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.60031199, 2.40437722])"
+      ]
+     },
+     "execution_count": 61,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#정규방정식\n",
+    "theta = np.linalg.inv(np.dot(X.T,X)).dot(X.T).dot(y)\n",
+    "theta"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {
+    "id": "M74iqj4WLMa_"
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "epoch: 0  loss: 0.16642375349768493  params: [1.02915211 0.93694534]  gradients: [-0.0002164370553116653, -0.009466859578431271]\n",
+      "epoch: 100  loss: 0.14458338866027418  params: [0.58703637 2.39545994]  gradients: [0.03385717560718134, 0.01747926094432845]\n",
+      "epoch: 200  loss: 0.14457486074616022  params: [0.58613434 2.39715772]  gradients: [0.03385253626793362, 0.01748814791464405]\n",
+      "epoch: 300  loss: 0.14457484992399947  params: [0.58613318 2.3971599 ]  gradients: [0.03385253031346097, 0.01748815932084198]\n",
+      "epoch: 400  loss: 0.1445748499101098  params: [0.58613318 2.3971599 ]  gradients: [0.033852530305818584, 0.017488159335481562]\n",
+      "epoch: 500  loss: 0.14457484991009187  params: [0.58613318 2.3971599 ]  gradients: [0.03385253030580874, 0.01748815933550031]\n",
+      "epoch: 600  loss: 0.14457484991009187  params: [0.58613318 2.3971599 ]  gradients: [0.03385253030580874, 0.01748815933550031]\n",
+      "epoch: 700  loss: 0.14457484991009187  params: [0.58613318 2.3971599 ]  gradients: [0.03385253030580874, 0.01748815933550031]\n",
+      "epoch: 800  loss: 0.14457484991009187  params: [0.58613318 2.3971599 ]  gradients: [0.03385253030580874, 0.01748815933550031]\n",
+      "epoch: 900  loss: 0.14457484991009187  params: [0.58613318 2.3971599 ]  gradients: [0.03385253030580874, 0.01748815933550031]\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([0.58613318, 2.3971599 ])"
+      ]
+     },
+     "execution_count": 69,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#경사하강법\n",
+    "new_param = gradient_descent(X, y, model = 'linear')\n",
+    "new_param"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "metadata": {
+    "id": "Ii3zBOwSLMa_"
+   },
+   "outputs": [],
+   "source": [
+    "y_hat_NE = theta.dot(X.T)\n",
+    "y_hat_GD = new_param.dot(X.T)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "oCVynFSPLMbA"
+   },
+   "source": [
+    "### Visualization\n",
+    "시각화를 통해 정규방정식과 경사하강법을 통한 선형회귀를 비교해보세요  \n",
+    "(밑의 코드를 실행만 시키면 됩니다. 추가 코드 x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "metadata": {
+    "id": "UoEACrbYLMbA"
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAAXIAAAD4CAYAAADxeG0DAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjUuMSwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy/YYfK9AAAACXBIWXMAAAsTAAALEwEAmpwYAAAkJklEQVR4nO3de3xU1dkv8N8zM5mAFwQjKC+Ui7Wvd0EIpbFqI1FatQqttip9q8eqfOhBFLRC6Ft8abEEsB4oajVY7WlfRXoqgqinUkXjpRmr4YgKYqlY0XgDYsELYiTznD8miSHMZc/Mvqy15/f9fOYDyezsvdbMnmee/ey19hZVBRER2SsSdAOIiKg4DORERJZjICcishwDORGR5RjIiYgsFwtio4cccogOGTIkiE0TEVlr7dq121W1b/ffBxLIhwwZgqampiA2TURkLRHZku73LK0QEVmOgZyIyHIM5ERElgukRp7O559/jubmZuzevTvophSlR48eGDhwIMrKyoJuChGVCGMCeXNzMw488EAMGTIEIhJ0cwqiqmhpaUFzczOGDh0adHOIqEQYU1rZvXs3KioqrA3iACAiqKiosP6ogojsYkwgB2B1EO8Qhj4Q2SSRSKCurg6JRCLopgTGldKKiLwB4CMAbQD2qGqlG+slIsomkUigpqYGra2tiMfjWLNmDaqqqoJulu/czMhPU9XhNgdxEcG1117b+fOvfvUrzJ49GwAwe/ZsDBgwAMOHD+987NixI5iGEhEAoKGhAa2trWhra0NraysaGhqCblIgjCqtBK28vBz3338/tm/fnvb5adOmYd26dZ2P3r17+9tAItpLdXU14vE4otEo4vE4qqurg25SINwK5ArgLyKyVkQmpltARCaKSJOING3bts2lzborFoth4sSJWLhwYdBNISIHqqqqsGbNGsyZM8f4soqXtXy3hh9+XVXfEZF+AB4VkVdV9amuC6jqEgBLAKCysjLr/eWmTgXWrXOpZe2GDwcWLcq93OTJk3HCCSdg+vTp+zy3cOFC3H333QCAPn364IknnnC3kUSUt6qqKqMDOOB9Ld+VjFxV32n/dyuAFQC+6sZ6g9CrVy9cfPHFWLx48T7PdS2tMIgTkVNe1/KLzshFZH8AEVX9qP3/YwH8oph1OsmcvTR16lSMGDECl156abANIaJQ6Kjld2Tkbtfy3cjIDwXwjIi8COA5AA+r6iMurDcwBx98ML7//e/jzjvvDLopRBQCXtfyi87IVfV1AMNcaItRrr32Wtxyyy17/a5rjRwAVq5cCd4gg4ic8LKWb8y1Vkzw8ccfd/7/0EMPxa5duzp/nj17dueYciIKj0QigYaGBlRXVxt/0jQTBnIiKllhmRnKCUFEVLLCMjOUgZyISlZYZoaytEJEJatjNAlr5EREFrNhZmguLK0QEVmOgbyL999/HxMmTMDhhx+OkSNHoqqqCitWrEBDQwMOOuggnHjiiTjyyCNx6qmn4qGHHgq6uUREAFha6aSqGD9+PC655BIsXboUALBlyxasWrUKffr0wSmnnNIZvNetW4fx48ejZ8+eqKmpCbLZRETMyDs8/vjjiMfjmDRpUufvBg8ejClTpuyz7PDhw3H99dfvM/OTiCgIZmbkAVzHdsOGDRgxYoTj1Y0YMQI33nhj8e0iIioSM/IMJk+ejGHDhmHUqFFpn1fNekl1IiLfmJmRB3Ad22OPPRbLly/v/PnWW2/F9u3bUVmZ/hakL7zwAo4++mi/mkdEATP5mizMyNuNGTMGu3fvxm233db5u64XzerqpZdewpw5czB58mS/mkdEAeq4JsusWbNQU1Pjye3aimFmRh4AEcHKlSsxbdo0LFiwAH379sX++++P+fPnAwCefvppnHjiidi1axf69euHxYsXc8QKUYh1zcDTXZMl36zcy4yegbyL/v37Y9myZWmf27lzp8+tIaKgdL8q4qJFi4q6w48V9+wkIjJdPnex756Bt7S0FHWHH+Pv2UlElIkpJwjzzYjT3WOzmGuyeH3PTqMCuapCRIJuRlE4LJEoxaSbNuRb43b7qoheX2XRmEDeo0cPtLS0oKKiwtpgrqpoaWlBjx49gm4KUeDcOEHolkIyYrevilgS9+wcOHAgmpubsW3btqCbUpQePXpg4MCBQTeDKHBelxPyEZbrjmciQZQCKisrtampyfftEpG/TKmRh4WIrFXVfWYpupaRi0gUQBOAt1X1226tl4jsFYabNtjAzeGHVwPY6OL6iIjIAVcCuYgMBHA2gN+6sT4iInLOrYx8EYDpAJKZFhCRiSLSJCJNtp/QJCIySdGBXES+DWCrqq7NtpyqLlHVSlWt7Nu3b7GbJSKidm5k5F8HcK6IvAFgGYAxInK3C+slIvJFPtP3TVT0qBVVnQlgJgCISDWAn6jqfxS7XiIiP5g0A7VQvGgWEZU0ry9o5QdXZ3aqagOABjfXSUTkJZNmoBbKmCn6RERBcHv6fhCzWRnIiajkuTUDNah6O2vkRGT9qA1TBFVvZ0ZOVOLCMGrDFEHV2xnIiUqcSdcNt11Ql8tlICcqcWEYtWGSIK74yEBOVOLCftOFUsBATkS8brhPvBqayEBOROQDL08qc/ghERWNwxdz83JoIjNyIipKqQ5fzLdM4uVJZQZyIipKKQ5fLOTLy8uTygzkRFQUW4cvFnPisdAvL69OKjOQE1FRbBy+WGw5yLQvLwZyIiqabcMXiy0HmfblxUBeIoK4tCaRqdzIqE368mIgLwGlOqqAKBPTMupiMZCXgFIcVUCUS7aM2rYjWAbyEmDaiRkik9l4BMtAXgLCdhhJ5CUbj2AZyEuESSdmiExm4xFs0YFcRHoAeApAefv67lPV/yp2vUREuXhRy7bxCNaNjPwzAGNU9WMRKQPwjIj8WVWfdWHdRGQ5N4Nt13UB8KyWbdsRbNGBXFUVwMftP5a1P7TY9RKR/dw8cdh9XZdcconxteytW4HFi4F584Cj2tZjKP6JW/95NgYNcffCs66sTUSiIrIOwFYAj6rq39IsM1FEmkSkadu2bW5sllzGS5GWFj/ebzcv3dp9XQAQj8cRjUaNqWWvXw9cfDEgojhbHsarh56KG34p2NMmWI/j8SDORb+PNru/YVV17QGgN4AnAByXbbmRI0cqmaWxsVF79uyp0WhUe/bsqY2NjUE3iTzk1/vt5nbSrauxsVHnzp0byP6aTKo+/LDqKaeo9sQnOhk361sYoAqkfxxyiOqddxa1TQBNmiamujpqRVV3iEgDgG8BWO/muslb2YZc2TA5woY2msSvIXZunjjMtC6/3u9PPwV+97tUmaTtrbcxDQvxE9yEszL9wahRQG0tMG4cEI1627h00T2fB4C+AHq3/78ngKcBfDvb3zAjN0+mzMmGTN2GNpqGr1lu776rOmNGKpkehb/pcnwnc7YNqH7ve6pNTZ62CR5m5P0B/F5EokjV3P+Pqj7kwnrJR5myHRsmR9jQRtPYOMTOay+8AMyfD/zpj204D8tRi3mYhxcwL9MfzJgBXH010L+/n81ML1109/rBjNweNmRuNrTRBkHWm/3W1qa6cqXq6NGqvbBDp2OetqBP5mx78GDV225T3bUr63q9fg2RISOX1HP+qqys1KamJt+3S4Wxof5sQxtNZuP1RbrLtA8kEgn85S9/xY4d5+GPfxyKnu9uxnW4EZNQn3ll1dWpjPub3wREHG/f69dQRNaqamX333OKPuVkw+QIG9pYCL++oGwvT3UPovfe+zSefHIkFi5UfAOfoRaP4Vu4DgszreDSS4HrrgOOPrrgNgT5GjKQExnKzyzZxuuLdHX33X/Hp5/egzKcjQs/vRtHjZ+AcdiE/5Vu4Z49U6NJJk8GKipca0OQryEDOZGh/MzwbDr52dYGrFiRGga4Ze02TMHNWIh5uBWfp11+gwgWAFhRXo7Vjz8eyteQgZzIUH5nePmWp/wq+3z0EVBfnwrch7Wsx3QswMX4b5yfYfl/nXQS+syfD5x8MgDgw0QCRzU0YHWXdnrV9sBKfOnOgHr94KgVImeKGQXh5QgKL0cKvfGG6pVXqgJJPRsP6tP4evbx25Mnq77+uhFt9xr8mNlJRO4qNMPzur7uZtmnsTGVbT/24C78CHehFvNwM97GzekW7ts3Vd++4grgwAMDb7sp3L0EFxEZwc2LVaXTUfbJ94JVe/YAS5cCJ5wADJRm3CTX4qSvC1Y9KNiF/XELpmAg3v7iD0aNApYvT/2haupygtdcU3AQL6btJmNGTmQQt2q3XtfXnZ7Y27kTuO22VMb97zufQy3mYQJWYEKmFV9wATB9OjBihKvtLaTtNmEgJzKEm+UQP4JVurLP5s3AjTcCd9R/Mc29Fi+gNtNKTJrmbrFQBnLO8iMbuV27dWsERabPkyrw1FNAXR2QWL0TP8ZtmIH5uB07cHu6FQ0enKpvX3JJaix3QMIwi7W70AXyML5JZA4vkwQTJ+V0/TyVle2H665bi/vu+wo+2/jFNPdvZPrj005LBe4zznA8zd0PXp3sDDSBTDeUxeuHl8MP586dq9FoVAFoNBrVuXPnerYtKi1+DFsz6cJVzc2qw4atV+Bjrcbj+gjGZh8GeOmlqq+8EnSzc/LiffRrSCNKZfihaVmNKWWeINphSt/d4kUm1/01CvKaMUuWvIxp076M5C7BAkzHFNyCdRmW1f32g3RMcz/4YD+bWTQvzh8EPqQxXXT3+uH1hCBTshpTJh4E0Q63b/EVxvczyP0jmVStr08l0oPwhj6Fk7Nm21v79dNN11+v2trqWxttwozcA6ZcCS/wb+kA2+HWNk0655FvJtc92+7+s5/vy65dwE9+khoKOAZrsArnYiJ2YWK2P7rnHmBCaqBg3/YHpRf4kMZ00d3rR6lM0S/kW9qL7NPmjNzWcx7d+z99+nQtKyvTSCSy142DvZzmfvLJqoI2nYabste2Ad01cKCOLi8P/OiRskOGjJyB3GP5BGYvP9hBlCfc2KYp5al8df0CikQiGolEFEDnzx1fSG69L48/rnrAAam73fwB/5EzcOv556tu377XOkwpYVFmoQ/kYdgJbc0+C5HvF5xt723XL6BYLKYi0hnIy8rKiupLW5vqr3+d+vQejQ26HsfkDty//KXqnj0u9tB9Qb3PNu1foQ7ktmZt3YWlH7l09DMSiWhZWZnW19cH3aSM3Lj6YH19fWd/Y7FY3v396CPVyy5LfVrH4/7cQTsaVX344bzbG6Sg9n3bPnOhDuRhymRtyg4KNXfu3L1KDbFYLG1/g34tghp5849/qI4cqRpDq/4CP8sduEeOVN20qeC2mSCoz7BtscOzQA7gSwCeALARwAYAV+f6G2bkpa2xsVHLysrS1oy7LlPIe+pm8PfqQ969jY88ohqLqfbDe/ogzs4duCdOTKXpIRLU+SHbYoeXgbw/gBHt/z8QwCYAx2T7G9bIwymf96C+vl5jsdheozi6KiSIejnOOx6P66RJkzpHmxS6rz3zTKPGYjMVUK3Ec/oWBuQO3L/5TWrgt+GK/QwGNWLLptjhW2kFwAMAzsi2jN+jVmx4o/xuo9vbc3uoZab1ZfsbLzLoxsZGnTRpkpa3D80rLy/XeDzuuJ87dqhOmKAKJPVH+G3uoF1Rofr000W322+mZra2lU5y8SWQAxgC4E0AvdI8NxFAE4CmQYMGFd0hp4HI7x2skAAZRBvd3p5XQbTra5mr3V69jl37JiKdI1DS9XPjRtXjj1ftgV26GFfmDNz/GjUqdVETy5kaME39gimU54EcwAEA1gL4bq5li83I83lz/NzBCt1p8mmjG5m0V0HX6w+Mk3Z7fXjePSOfP3+jAqqD8U99Biflzrivu04TDQ3GHyHmy+SAacMRuVOeBnIAZQBWA7jGyfLFBvJ8A59fO9ikSZOyZmvFttGtvnj1mnj9gQkyWDQ2NuoNN9TpDTe8qocf/omOwWP6CXrmDtxLl/rWxqCFKWCaysuTnQLgDwAWOf0bPzPyjuW93sEaGxs1Ho93jsQoLy/Pu7ySq41uZtK2fuj8bPdHH6nedJNqv0PanN3N/YgjVNet87xdfrB1/wg7LwP5ye3B6yUA69ofZ2X7GzdOdpq2o3Wvo06aNMn1bXT/AquvrzfqNbDdG2+oTpmiuh8+1in4tb6N/tkDd5pp7mFgUpnEtM950EI9IcgEfu38HTt2x2xBEz5stmpsVD3nHNUBeEtvwrTsQXv0aNUVK1Lz40POlBOXpnyhmPRlkimQh/IytkHw6zKWHZforaurM+ISubbYswe4777U3dzLX/wbajEP38FKrMr0BxdckLox8Ikn+tI+r27CUch6Tbk5S7rL/Hb83utLxXa8bhUVFZg6daoRl1HOKl109/oRxozcb6ZkK6basUO1rk714F6f6wW4V1/AsKwZ94JYTP8tw+Qkr3l58rnQ9ZqQhaYrJfp11Nv1gmcdl5MwYVglMmTkkaC/SEyQSCRQV1eHRCIRdFMc6zgCmDNnjrlZgo82bwZ+/GPgINmJWpkH7d0btTMFLR+WYRkuwnC82LmsDh0K1NcDn34KqKJu7lzMVMU7yeRemZ8bnOxbmTLPYhWz3qqqKsycOTPQ/ar7Pt7S0uLJ69Rd19ctmUwiGo0iGo0acevIjNJFd68fJmXkzGy95UVml0yqPvmk6plnqh6BTVqPK7LXt087TXX16ozT3NPtA2602+9hpX6tNyh+nocydVABeLIzPVNO7ISRWx+81lbV3/9e9eijknoa1uhqnJE9cF92WWqKZZ5t7fiwutVuryZ6ebWsDfzqj6mvGwN5BmHLWkxS6JfkBx+ozpmj2rvnbr0Ud+rf8ZWMQTu5//6phVtaAm93d17sW9xfS1umQF7yo1YCv2lqCGQaGeF09MOmTcCCBcCqO7fiKixGLebhZ2jDz9Isq8cdB5kxIzWqpKwM4kF/MrU73xEgXuxbptzQmwyTLrp7/TApI6fiOLmQVddD1GRS9dFHVWtqVI/DS/rf+EH2Msk556g+80wg/crngl1+tsuEdlAwwIzcDl6NJy5GtjblyhBHjqzCxo1V+B8XJ3Hka6swA/NxOhpxeqaNTZkCXHMNMGSIZ/1xomO8fgdTMmE3svxi9jET908CM3KTmJhtOcm4uz7/8MPP6axZqgfFck9zTx56qOrChVbc7cbE96YQ+fTD1KOSUgZm5N7rmq0A+c9AMyXry6dNvXpV4Rvf2IL1j+zGtE8X4qyzv4qzAPwi3cpGjwZqa4FzzwUiEU/q214Jy7kUp/tYIpFATU3NXjMaTdw/Mym1IwcGcpd03fFjsRhUFW1tbXlN6zVlanSmNpWVxdGjx3hUVwO7n3wWtZiH8XgAf870xxdeCEyf7ts0d691L7fYyOk+li5om7h/ppPuS8j29y0XBnKXNDQ04LPPPkMymURbWxtEBKqaV+ZiWta3ezfw4otVOLjXVpz8/kOobZuH4dccg2lpllURSG0tcNVVwGGHZV1v92xpyZIlWL58Oc477zxMnDjRm84YJMhs0ek+li5om7Z/ZmLTkYNr0tVbvH6EsUZeX1/feS1yABqLxayrJb73nurMmaoH4V86E7/UHeiVub49dKhqfb3qp5/mtY3uddbp06fv9brV19d71Dsz2FRnNnVSTC42vcb5Amvk3mppaUEkEkEymUQkEsHll1+OQYMGpc1cgq7fdWx/wICz8Mgjw/D8vf/AdbgRE3EH5gKYm+6PampS9e2aGkCk4Pp292zp/vvv3+v55cuXhzortylbtLWUZMuRg6vSRXevH2HMyPO5rkZ5ebmKSN53ESpGW5vqAw+oHnfsTh2Dx5xNc3/1VdfbwYw8vNkieQ+cou89J4eikyZN2itweXEnIVXVTz5Rvflm1aH/tlsvwx36D3w5c5nkgANcn+aeTffXqb6+XseOHRv6IN7B1pIFBY+B3AOFfCC9CuTNzarXXqvaF+/rHPynfo5oxsD9koj+QEQP6NGDwYTIIgzkDjkNzoUeIjc2pm7SLCIaj8cLDqTPP6963nmqx+PFvKe5MyMkslOmQM6TnV3kM/600JNWVVVVaGhoyOtETDIJrFwJzK9L4tCmh1CLeTgJCdyX6Q+uuio1zX3w4IxtKIkTQEQlIvSBPJ8RIvkE52ImR+QKpB9/DCxZAiyu+wTnbr8TtZiH7+JdfDfNstrvUMjMWuDyy4EDDnDcBipO0COPiPaSLk3P9wHgLgBbAax3srxfpZV8yx+FLO9GieKNN1SnTFEdiDd1Ia7OWiZJ+ng391IswaS7vkj318CNkSeFvLal+H7Q3uBljRzAqQBGmBbIC7lBgB8flkRCddw41dFI6AqMy17fvugi1Rde8KwtmZTiMDmnN/st9sYThby2pfh+0L4yBXJXbr6sqk8B+MCNdbmpo/yRz41T3b7p7J49wLJlwMhhe3CR3It1MhxfqxKsfEDwLKowHg90LpsEcGMshqYHH/wilC9dCgwf7kpb8uHVDYFN1r3Py5cvT/saFLJfZduOk9e2FN8Pcs6VQO6EiEwUkSYRadq2bZsv2yz2TvPd74Du5I7oH36YutvN4IN24KcyF7vKeuHCiwRrXyrDvZiw193cN0sEm2fMwIKf/xyxaBRRADNV8ejLLxfUXzcVG6yccvKa+rXN7n0+77zz0r4Gxe5Xhby2fr0fZKl0aXohDwBDYFhppRhOD7P/9Ke1Onr0Wkd3c0/W1OjSH/1Io5HIXoflph42e11mCqLf+d7RyKvXgDVyKgS8HkcetkDevQ46duzY9p9PVuBhrcGj+ihqsgbu30WjenQkslfAyBRISvFD6tZNjk3fJpFbMgXy0A8/LFR1dTXKyvZDMjkesbZp+NJf1uJVbMYReAbA2fss/yEE/2/sGahetgzo0wd1dXWYNWsW2pJJRLsMZcx0QZ9MQxLDPMzNy+tbF3tDaCKrpIvu+T4A3AvgXQCfA2gGcFm25U3NyD/4IHXJkaH7vac34KdZp7m3HXe8bpo9Ww/o0SPtYbpbQ9RMLLm4yYsjkXzLJ0S2AKfo762xsVGvueZ2Peec9/QErNN7cFH2+va556r+9a9p15MpKBQbMLqWASKRiI4dOzaveyy63Z5iuLFtp+tg+YTCquQDeTKpumaN6tjT2/QcPKB/RVXWwK1XX626ZYvv7eyqI7OMtJ8cjXSrt6db1ulNkv0M5n4fnZTCkQyVpkyB3Lfhh35rbQXuugsYdsQnmCqL8H7kMIypEax+LIpVGIeT8MXQs/cgmArgoEgEdXPnpkL5okXAoEFBNR/AF8PcTj/99M6bVmQaQ5xrnHGQ45Dd2HY+6yh2eCCRddJFd68fXmTk27apzpqlenhsS85p7juPPU6/F49rLBLReDyu5eXlRmdvTjJMZuTeYD2dTIIMGbmknvNXZWWlNjU1FbWOV15JTbx59fdf3M09o4suSt3NvcsMya6jGgAYPzLEyeiVXMsEOQImn21nWtbv9pfC3djDPCoqjERkrapW7vNEuuju9aPQjPz1zUm9CPfoizg+80lJkdQdhN97r6BtuIFZXOFMqm+H/aSpSa81OYMwjCN/7+f1WIof7/W75NAvI/LTWuCHPwTKywu+KbATTrPisGdxXjLp5sRhH3Nu0mtNxbEqkFfNGwf02gCMG9d5N3e/ztY6DdD8cBSnoqICIoJIJBJ48Az73djD/kVVSqwK5OjfH7j55kA27TRA88NRuEQigalTpyKZTCIajWLRokX7vMZ+13TDfDelsH9RFcrG8wZ2BfIAOQ3Q/HAUruPLMplMQkTQ0tKy1/MsW+UvV1AK8xdVIWzdxxjIHconQNv04TAp+8j1ZcmyVX5sDUpBsnUfYyDPg00B2gnTPuhdvywrKio6J/10tIllq/zYGpSCZOs+xkBewkz8oHdsP90XDMtW+bE1KAXJ1n2MgbyEmfpBz/YFE7ajIi/ZGpSCZuM+xkBewkz9oJv6BWMjG4MS5c/aKfoUbiadhCUyRaYp+szIyUjMJImcC+1lbIlMl0gkUFdXh0QikXthoiyYkRMFwLShn2Q3ZuREAQjyRh8UPgzkRAHoGJkTjUYRi8Xw5ptvssRCBWMgLzGsy5qhY+jnFVdcAVXFHXfcgZqaGr4vVBBXArmIfEtE/i4ir4lIrRvrJPd11GVnzZrFoGGAqqoqDBo0CG1tbSyxUFGKDuQiEgVwK4AzARwD4CIROabY9ZL7WJc1T9cSCyc/UaHcGLXyVQCvqerrACAiywCMA/CKC+smF3HGpHlMnV1LdnEjkA8A8FaXn5sBjHZhvaEV1KxFBg0zcfITFcuNQJ7uNpn7zPsXkYkAJgLAoEGDXNisnYIeP8ygQRQ+bpzsbAbwpS4/DwTwTveFVHWJqlaqamXfvn1d2KydWKcmIre5EcifB/AVERkqInEAFwJY5cJ6Q4knt4jIbUWXVlR1j4hcCWA1gCiAu1R1Q9EtCynWqYnIbVZdxpaXNiWiUmb9ZWyDPklIRGQqa6bo8yRh/jgdn6g0WJORczJLfngEQ1Q6rAnkPEmYn2w3MCaicLEmkAOczJIPHsEQlQ6rAjk5xyMYotLBQB5iPIIhKg3WjFohIqL0rA7kYRleF5Z+EFEwrC2thGV4XVj6QUTBsTYjD8sEobD0g4iCY20gD8tVBMPSDyIKjrWllXyG15l8sS0OEySiYll19cNCOK1BmxzsiYiAEFz9sFBOpqrzhCMR2czaGrlTTmrQPOFIRDYLfUbupAbN65IQkc1CXyN3ijVyIjJdydbIneJ1SYjIVqGvkRMRhR0DORGR5RjIiYgsV1QgF5HvicgGEUmKyD4FeCIi8l6xGfl6AN8F8JQLbSEiogIUNWpFVTcCgIi40xoiIsqbbzVyEZkoIk0i0rRt2za/NktEFHo5M3IReQzAYWme+k9VfcDphlR1CYAlQGpCkOMWEhFRVjkDuaqe7kdDiIioMBx+SERkuWKHH35HRJoBVAF4WERWu9MsIiJyqthRKysArHCpLUREVACWVoiILMdATkRkOQZyIiLLMZATEVmOgZyIyHIM5ERElmMgd0kikUBdXR0SiUTQTSGiEsN7drogkUigpqYGra2tiMfjWLNmDe//SUS+YUbugoaGBrS2tqKtrQ2tra1oaGgIuklEVEIYyF1QXV2NeDyOaDSKeDyO6urqoJtERCWEpRUXVFVVYc2aNWhoaEB1dTXLKkTkKwZyl1RVVTGAE1EgWFohIrIcAzkRkeUYyImILMdATkRkOQZyIiLLMZATEVlOVNX/jYpsA7DFwaKHANjucXNMxH6XFva7tBTT78Gq2rf7LwMJ5E6JSJOqVgbdDr+x36WF/S4tXvSbpRUiIssxkBMRWc70QL4k6AYEhP0uLex3aXG930bXyImIKDfTM3IiIsqBgZyIyHJGBHIR+ZaI/F1EXhOR2jTPi4gsbn/+JREZEUQ73eag3z9o7+9LItIoIsOCaKfbcvW7y3KjRKRNRM73s31ecdJvEakWkXUiskFEnvS7jW5zsI8fJCIPisiL7X2+NIh2uk1E7hKRrSKyPsPz7sY0VQ30ASAKYDOAwwHEAbwI4Jhuy5wF4M8ABMDXAPwt6Hb71O+TAPRp//+ZpdLvLss9DuD/Ajg/6Hb79H73BvAKgEHtP/cLut0+9PmnAOa3/78vgA8AxINuuwt9PxXACADrMzzvakwzISP/KoDXVPV1VW0FsAzAuG7LjAPwB015FkBvEenvd0NdlrPfqtqoqv9q//FZAAN9bqMXnLzfADAFwHIAW/1snIec9HsCgPtV9U0AUFXb++6kzwrgQBERAAcgFcj3+NtM96nqU0j1JRNXY5oJgXwAgLe6/Nzc/rt8l7FNvn26DKlvcNvl7LeIDADwHQC3+9gurzl5v/8dQB8RaRCRtSJysW+t84aTPt8C4GgA7wB4GcDVqpr0p3mBcjWmmXCrN0nzu+5jIp0sYxvHfRKR05AK5Cd72iJ/OOn3IgAzVLUtlaiFgpN+xwCMBFADoCeAhIg8q6qbvG6cR5z0+ZsA1gEYA+DLAB4VkadV9UOP2xY0V2OaCYG8GcCXuvw8EKlv53yXsY2jPonICQB+C+BMVW3xqW1ectLvSgDL2oP4IQDOEpE9qrrSlxZ6w+l+vl1VPwHwiYg8BWAYAFsDuZM+XwpgnqYKx6+JyD8BHAXgOX+aGBhXY5oJpZXnAXxFRIaKSBzAhQBWdVtmFYCL28/0fg3ATlV91++Guixnv0VkEID7AfzQ4qysu5z9VtWhqjpEVYcAuA/A/7Q8iAPO9vMHAJwiIjER2Q/AaAAbfW6nm5z0+U2kjkAgIocCOBLA6762MhiuxrTAM3JV3SMiVwJYjdRZ7rtUdYOITGp//nakRi6cBeA1ALuQ+ha3msN+Xw+gAsBv2rPTPWr51eIc9jt0nPRbVTeKyCMAXgKQBPBbVU07fM0GDt/rOQD+t4i8jFS5YYaqWn9pWxG5F0A1gENEpBnAfwEoA7yJaZyiT0RkORNKK0REVAQGciIiyzGQExFZjoGciMhyDORERJZjICcishwDORGR5f4/3tABWpRIeicAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "plt.plot(X.iloc[:,1], y, '.k') #산점도\n",
+    "plt.plot(X.iloc[:,1], y_hat_NE, '-b', label = 'NE') #정규방정식\n",
+    "plt.plot(X.iloc[:,1], y_hat_GD, '-r', label = 'GD') #경사하강법\n",
+    "plt.legend()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "ijgIcAdGLMbA"
+   },
+   "source": [
+    "* 시각화를 통해 정규방정식과 경사하강법의 회귀선을 비교해본 결과 두 방법의 회귀선이 거의 동일한 것을 알 수 있다."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "name": "wk3_optimization_assignment.ipynb",
+   "provenance": []
+  },
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
